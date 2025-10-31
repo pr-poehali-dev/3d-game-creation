@@ -41,6 +41,9 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
     let playerX = 0;
     let playerZ = 0;
     const speed = 3;
+    let targetX: number | null = null;
+    let targetZ: number | null = null;
+    let lastClickTime = 0;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       keysPressed.current[e.key.toLowerCase()] = true;
@@ -50,8 +53,26 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
       keysPressed.current[e.key.toLowerCase()] = false;
     };
 
+    const handleDoubleClick = (e: MouseEvent) => {
+      const currentTime = Date.now();
+      if (currentTime - lastClickTime < 300) {
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+        
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const scale = 20;
+        
+        targetX = playerX + (clickX - centerX) / scale;
+        targetZ = playerZ + (clickY - centerY) / scale;
+      }
+      lastClickTime = currentTime;
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    canvas.addEventListener('click', handleDoubleClick);
 
     const getColor = () => {
       switch (character.id) {
@@ -227,28 +248,66 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
       ctx.arc(centerX, centerY, 15, 0, Math.PI * 2);
       ctx.fill();
 
-      // Direction indicator
-      let dirX = 0;
-      let dirZ = 0;
-      if (keysPressed.current['w'] || keysPressed.current['ц'] || keysPressed.current['arrowup']) dirZ = -1;
-      if (keysPressed.current['s'] || keysPressed.current['ы'] || keysPressed.current['arrowdown']) dirZ = 1;
-      if (keysPressed.current['a'] || keysPressed.current['ф'] || keysPressed.current['arrowleft']) dirX = -1;
-      if (keysPressed.current['d'] || keysPressed.current['в'] || keysPressed.current['arrowright']) dirX = 1;
-
-      if (dirX !== 0 || dirZ !== 0) {
-        ctx.fillStyle = '#ffffff';
+      // Target marker
+      if (targetX !== null && targetZ !== null) {
+        const markerScreenX = centerX + (targetX - playerX) * scale;
+        const markerScreenY = centerY + (targetZ - playerZ) * scale;
+        
+        ctx.strokeStyle = playerColor;
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(centerX + dirX * 20, centerY + dirZ * 20, 5, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.arc(markerScreenX, markerScreenY, 10, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(markerScreenX - 8, markerScreenY);
+        ctx.lineTo(markerScreenX + 8, markerScreenY);
+        ctx.moveTo(markerScreenX, markerScreenY - 8);
+        ctx.lineTo(markerScreenX, markerScreenY + 8);
+        ctx.stroke();
       }
     };
 
     const gameLoop = () => {
-      // Update player position - NO LIMITS!
-      if (keysPressed.current['w'] || keysPressed.current['ц'] || keysPressed.current['arrowup']) playerZ -= speed * 0.05;
-      if (keysPressed.current['s'] || keysPressed.current['ы'] || keysPressed.current['arrowdown']) playerZ += speed * 0.05;
-      if (keysPressed.current['a'] || keysPressed.current['ф'] || keysPressed.current['arrowleft']) playerX -= speed * 0.05;
-      if (keysPressed.current['d'] || keysPressed.current['в'] || keysPressed.current['arrowright']) playerX += speed * 0.05;
+      // Keyboard movement
+      if (keysPressed.current['w'] || keysPressed.current['ц'] || keysPressed.current['arrowup']) {
+        playerZ -= speed * 0.05;
+        targetX = null;
+        targetZ = null;
+      }
+      if (keysPressed.current['s'] || keysPressed.current['ы'] || keysPressed.current['arrowdown']) {
+        playerZ += speed * 0.05;
+        targetX = null;
+        targetZ = null;
+      }
+      if (keysPressed.current['a'] || keysPressed.current['ф'] || keysPressed.current['arrowleft']) {
+        playerX -= speed * 0.05;
+        targetX = null;
+        targetZ = null;
+      }
+      if (keysPressed.current['d'] || keysPressed.current['в'] || keysPressed.current['arrowright']) {
+        playerX += speed * 0.05;
+        targetX = null;
+        targetZ = null;
+      }
+
+      // Auto-move to target
+      if (targetX !== null && targetZ !== null) {
+        const dx = targetX - playerX;
+        const dz = targetZ - playerZ;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+        
+        if (distance > 0.1) {
+          const moveSpeed = speed * 0.05;
+          playerX += (dx / distance) * moveSpeed;
+          playerZ += (dz / distance) * moveSpeed;
+        } else {
+          targetX = null;
+          targetZ = null;
+        }
+      }
 
       setPlayerPosition({ x: playerX, z: playerZ });
       drawWorld();
@@ -269,6 +328,7 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('resize', handleResize);
+      canvas.removeEventListener('click', handleDoubleClick);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -323,16 +383,17 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
       </Card>
 
       <Card className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-dark-card/90 backdrop-blur-sm border-primary/50 p-3">
-        <div className="flex items-center gap-3 text-sm text-gray-400">
+        <div className="flex items-center gap-4 text-sm text-gray-400">
+          <div className="flex items-center gap-2">
+            <Icon name="Mouse" size={16} className="text-primary" />
+            <span>Двойной клик - движение</span>
+          </div>
+          <div className="h-4 w-px bg-dark-border"></div>
           <div className="flex items-center gap-1">
             <kbd className="px-2 py-1 bg-dark-bg rounded text-xs">W</kbd>
             <kbd className="px-2 py-1 bg-dark-bg rounded text-xs">A</kbd>
             <kbd className="px-2 py-1 bg-dark-bg rounded text-xs">S</kbd>
             <kbd className="px-2 py-1 bg-dark-bg rounded text-xs">D</kbd>
-          </div>
-          <span>Движение</span>
-          <div className="ml-2 px-2 py-1 bg-primary/20 rounded text-xs text-primary">
-            Бесконечный мир
           </div>
         </div>
       </Card>
