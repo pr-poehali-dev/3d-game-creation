@@ -27,6 +27,9 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
   const [currentMana] = useState(character.stats.mana);
   const keysPressed = useRef<{ [key: string]: boolean }>({});
   const animationRef = useRef<number>();
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const cameraOffset = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -40,29 +43,53 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
 
     let playerX = 0;
     let playerZ = 0;
-    const speed = 3;
+    const speed = 6;
     let targetX: number | null = null;
     let targetZ: number | null = null;
     let lastClickTime = 0;
 
-    const handleDoubleClick = (e: MouseEvent) => {
-      const currentTime = Date.now();
-      if (currentTime - lastClickTime < 300) {
-        const rect = canvas.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const clickY = e.clientY - rect.top;
-        
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const scale = 20;
-        
-        targetX = playerX + (clickX - centerX) / scale;
-        targetZ = playerZ + (clickY - centerY) / scale;
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.button === 0) {
+        setIsDragging(true);
+        dragStart.current = { x: e.clientX, y: e.clientY };
       }
-      lastClickTime = currentTime;
     };
 
-    canvas.addEventListener('click', handleDoubleClick);
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        const dx = e.clientX - dragStart.current.x;
+        const dy = e.clientY - dragStart.current.y;
+        cameraOffset.current.x += dx * 0.5;
+        cameraOffset.current.y += dy * 0.5;
+        dragStart.current = { x: e.clientX, y: e.clientY };
+      }
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      if (e.button === 0) {
+        if (!isDragging) {
+          const currentTime = Date.now();
+          if (currentTime - lastClickTime < 300) {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const scale = 20;
+            
+            targetX = playerX + (clickX - centerX - cameraOffset.current.x) / scale;
+            targetZ = playerZ + (clickY - centerY - cameraOffset.current.y) / scale;
+          }
+          lastClickTime = currentTime;
+        }
+        setIsDragging(false);
+      }
+    };
+
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
 
     const getColor = () => {
       switch (character.id) {
@@ -135,8 +162,8 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
       ctx.fillStyle = '#0a0a0f';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
+      const centerX = canvas.width / 2 + cameraOffset.current.x;
+      const centerY = canvas.height / 2 + cameraOffset.current.y;
       const scale = 20;
 
       // Smooth procedural terrain with gradients
@@ -268,13 +295,19 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
         const distance = Math.sqrt(dx * dx + dz * dz);
         
         if (distance > 0.1) {
-          const moveSpeed = speed * 0.05;
+          const moveSpeed = speed * 0.08;
           playerX += (dx / distance) * moveSpeed;
           playerZ += (dz / distance) * moveSpeed;
         } else {
           targetX = null;
           targetZ = null;
         }
+      }
+
+      // Smooth camera return when not dragging
+      if (!isDragging) {
+        cameraOffset.current.x *= 0.95;
+        cameraOffset.current.y *= 0.95;
       }
 
       setPlayerPosition({ x: playerX, z: playerZ });
@@ -294,7 +327,9 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      canvas.removeEventListener('click', handleDoubleClick);
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseup', handleMouseUp);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -349,9 +384,16 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
       </Card>
 
       <Card className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-dark-card/90 backdrop-blur-sm border-primary/50 p-3">
-        <div className="flex items-center gap-2 text-sm text-gray-400">
-          <Icon name="Mouse" size={16} className="text-primary" />
-          <span>Двойной клик для перемещения</span>
+        <div className="flex items-center gap-4 text-sm text-gray-400">
+          <div className="flex items-center gap-2">
+            <Icon name="Mouse" size={16} className="text-primary" />
+            <span>Двойной клик - движение</span>
+          </div>
+          <div className="h-4 w-px bg-dark-border"></div>
+          <div className="flex items-center gap-2">
+            <Icon name="Hand" size={16} className="text-accent" />
+            <span>Зажать ЛКМ - осмотр карты</span>
+          </div>
         </div>
       </Card>
     </div>
