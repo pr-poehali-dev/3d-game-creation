@@ -62,6 +62,64 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
       }
     };
 
+    // Procedural generation using seed
+    const seededRandom = (x: number, z: number, seed: number) => {
+      const val = Math.sin(x * 12.9898 + z * 78.233 + seed) * 43758.5453;
+      return val - Math.floor(val);
+    };
+
+    const generateTrees = (centerX: number, centerY: number, scale: number) => {
+      const trees = [];
+      const gridSize = 4;
+      const viewRange = 30;
+
+      for (let gx = Math.floor(playerX / gridSize) - viewRange; gx < Math.floor(playerX / gridSize) + viewRange; gx++) {
+        for (let gz = Math.floor(playerZ / gridSize) - viewRange; gz < Math.floor(playerZ / gridSize) + viewRange; gz++) {
+          const rand = seededRandom(gx, gz, 1234);
+          
+          if (rand > 0.85) {
+            const tx = gx * gridSize + (seededRandom(gx, gz, 5678) - 0.5) * 2;
+            const tz = gz * gridSize + (seededRandom(gx, gz, 9012) - 0.5) * 2;
+            
+            const screenX = centerX + (tx - playerX) * scale;
+            const screenY = centerY + (tz - playerZ) * scale;
+            
+            if (screenX > -50 && screenX < canvas.width + 50 && screenY > -50 && screenY < canvas.height + 50) {
+              trees.push({ x: screenX, y: screenY, size: seededRandom(gx, gz, 3456) });
+            }
+          }
+        }
+      }
+      return trees;
+    };
+
+    const generateRuins = (centerX: number, centerY: number, scale: number) => {
+      const ruins = [];
+      const gridSize = 20;
+      const viewRange = 5;
+
+      for (let gx = Math.floor(playerX / gridSize) - viewRange; gx < Math.floor(playerX / gridSize) + viewRange; gx++) {
+        for (let gz = Math.floor(playerZ / gridSize) - viewRange; gz < Math.floor(playerZ / gridSize) + viewRange; gz++) {
+          const rand = seededRandom(gx, gz, 7777);
+          
+          if (rand > 0.7) {
+            const rx = gx * gridSize;
+            const rz = gz * gridSize;
+            
+            const screenX = centerX + (rx - playerX) * scale;
+            const screenY = centerY + (rz - playerZ) * scale;
+            
+            if (screenX > -100 && screenX < canvas.width + 100 && screenY > -100 && screenY < canvas.height + 100) {
+              const width = 20 + seededRandom(gx, gz, 8888) * 30;
+              const height = 25 + seededRandom(gx, gz, 9999) * 40;
+              ruins.push({ x: screenX, y: screenY, w: width, h: height });
+            }
+          }
+        }
+      }
+      return ruins;
+    };
+
     const drawWorld = () => {
       ctx.fillStyle = '#0a0a0f';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -70,60 +128,56 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
       const centerY = canvas.height / 2;
       const scale = 20;
 
-      // Ground grid
+      // Infinite grid
       ctx.strokeStyle = '#1a1a2e';
       ctx.lineWidth = 1;
-      for (let i = -20; i <= 20; i++) {
-        const x = centerX + (i * scale) - (playerX * scale);
+      
+      const gridSpacing = scale;
+      const offsetX = (playerX * scale) % gridSpacing;
+      const offsetY = (playerZ * scale) % gridSpacing;
+
+      for (let x = -gridSpacing + offsetX; x < canvas.width + gridSpacing; x += gridSpacing) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height);
         ctx.stroke();
       }
-      for (let i = -20; i <= 20; i++) {
-        const y = centerY + (i * scale) - (playerZ * scale);
+
+      for (let y = -gridSpacing + offsetY; y < canvas.height + gridSpacing; y += gridSpacing) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width, y);
         ctx.stroke();
       }
 
-      // Trees
-      const treePositions = [
-        [-8, -8], [8, -8], [-8, 8], [8, 8],
-        [-12, 0], [12, 0], [0, -12], [0, 12],
-      ];
+      // Generate ruins
+      const ruins = generateRuins(centerX, centerY, scale);
+      ruins.forEach(({ x, y, w, h }) => {
+        ctx.fillStyle = '#3D2E5C';
+        ctx.fillRect(x - w / 2, y - h / 2, w, h);
+        
+        // Add details
+        ctx.fillStyle = '#2D1B4E';
+        ctx.fillRect(x - w / 2 + 5, y - h / 2 + 5, w - 10, 5);
+      });
 
-      treePositions.forEach(([tx, tz]) => {
-        const screenX = centerX + (tx - playerX) * scale;
-        const screenY = centerY + (tz - playerZ) * scale;
+      // Generate trees
+      const trees = generateTrees(centerX, centerY, scale);
+      trees.forEach(({ x, y, size }) => {
+        const treeSize = 0.8 + size * 0.4;
         
         // Trunk
         ctx.fillStyle = '#2D1B4E';
-        ctx.fillRect(screenX - 5, screenY - 15, 10, 30);
+        ctx.fillRect(x - 5 * treeSize, y - 15 * treeSize, 10 * treeSize, 30 * treeSize);
         
         // Crown
         ctx.fillStyle = '#9b87f5';
         ctx.beginPath();
-        ctx.moveTo(screenX, screenY - 40);
-        ctx.lineTo(screenX + 20, screenY - 15);
-        ctx.lineTo(screenX - 20, screenY - 15);
+        ctx.moveTo(x, y - 40 * treeSize);
+        ctx.lineTo(x + 20 * treeSize, y - 15 * treeSize);
+        ctx.lineTo(x - 20 * treeSize, y - 15 * treeSize);
         ctx.closePath();
         ctx.fill();
-      });
-
-      // Ruins
-      const ruins = [
-        [-15, -15, 30, 40],
-        [15, -15, 20, 30],
-      ];
-
-      ruins.forEach(([rx, rz, w, h]) => {
-        const screenX = centerX + (rx - playerX) * scale;
-        const screenY = centerY + (rz - playerZ) * scale;
-        
-        ctx.fillStyle = '#3D2E5C';
-        ctx.fillRect(screenX - w / 2, screenY - h / 2, w, h);
       });
 
       // Player (always center)
@@ -159,14 +213,11 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
     };
 
     const gameLoop = () => {
-      // Update player position
+      // Update player position - NO LIMITS!
       if (keysPressed.current['w'] || keysPressed.current['ц'] || keysPressed.current['arrowup']) playerZ -= speed * 0.05;
       if (keysPressed.current['s'] || keysPressed.current['ы'] || keysPressed.current['arrowdown']) playerZ += speed * 0.05;
       if (keysPressed.current['a'] || keysPressed.current['ф'] || keysPressed.current['arrowleft']) playerX -= speed * 0.05;
       if (keysPressed.current['d'] || keysPressed.current['в'] || keysPressed.current['arrowright']) playerX += speed * 0.05;
-
-      playerX = Math.max(-20, Math.min(20, playerX));
-      playerZ = Math.max(-20, Math.min(20, playerZ));
 
       setPlayerPosition({ x: playerX, z: playerZ });
       drawWorld();
@@ -249,6 +300,9 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
             <kbd className="px-2 py-1 bg-dark-bg rounded text-xs">D</kbd>
           </div>
           <span>Движение</span>
+          <div className="ml-2 px-2 py-1 bg-primary/20 rounded text-xs text-primary">
+            Бесконечный мир
+          </div>
         </div>
       </Card>
     </div>
