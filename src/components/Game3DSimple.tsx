@@ -45,14 +45,6 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
     let targetZ: number | null = null;
     let lastClickTime = 0;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      keysPressed.current[e.key.toLowerCase()] = true;
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      keysPressed.current[e.key.toLowerCase()] = false;
-    };
-
     const handleDoubleClick = (e: MouseEvent) => {
       const currentTime = Date.now();
       if (currentTime - lastClickTime < 300) {
@@ -70,8 +62,6 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
       lastClickTime = currentTime;
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
     canvas.addEventListener('click', handleDoubleClick);
 
     const getColor = () => {
@@ -271,28 +261,6 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
     };
 
     const gameLoop = () => {
-      // Keyboard movement
-      if (keysPressed.current['w'] || keysPressed.current['ц'] || keysPressed.current['arrowup']) {
-        playerZ -= speed * 0.05;
-        targetX = null;
-        targetZ = null;
-      }
-      if (keysPressed.current['s'] || keysPressed.current['ы'] || keysPressed.current['arrowdown']) {
-        playerZ += speed * 0.05;
-        targetX = null;
-        targetZ = null;
-      }
-      if (keysPressed.current['a'] || keysPressed.current['ф'] || keysPressed.current['arrowleft']) {
-        playerX -= speed * 0.05;
-        targetX = null;
-        targetZ = null;
-      }
-      if (keysPressed.current['d'] || keysPressed.current['в'] || keysPressed.current['arrowright']) {
-        playerX += speed * 0.05;
-        targetX = null;
-        targetZ = null;
-      }
-
       // Auto-move to target
       if (targetX !== null && targetZ !== null) {
         const dx = targetX - playerX;
@@ -325,8 +293,6 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
     window.addEventListener('resize', handleResize);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('resize', handleResize);
       canvas.removeEventListener('click', handleDoubleClick);
       if (animationRef.current) {
@@ -383,18 +349,9 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
       </Card>
 
       <Card className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-dark-card/90 backdrop-blur-sm border-primary/50 p-3">
-        <div className="flex items-center gap-4 text-sm text-gray-400">
-          <div className="flex items-center gap-2">
-            <Icon name="Mouse" size={16} className="text-primary" />
-            <span>Двойной клик - движение</span>
-          </div>
-          <div className="h-4 w-px bg-dark-border"></div>
-          <div className="flex items-center gap-1">
-            <kbd className="px-2 py-1 bg-dark-bg rounded text-xs">W</kbd>
-            <kbd className="px-2 py-1 bg-dark-bg rounded text-xs">A</kbd>
-            <kbd className="px-2 py-1 bg-dark-bg rounded text-xs">S</kbd>
-            <kbd className="px-2 py-1 bg-dark-bg rounded text-xs">D</kbd>
-          </div>
+        <div className="flex items-center gap-2 text-sm text-gray-400">
+          <Icon name="Mouse" size={16} className="text-primary" />
+          <span>Двойной клик для перемещения</span>
         </div>
       </Card>
     </div>
