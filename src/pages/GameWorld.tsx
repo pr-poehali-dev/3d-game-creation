@@ -3,7 +3,9 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
+import WorldMap from '@/components/WorldMap';
 
 interface Quest {
   id: number;
@@ -118,7 +120,24 @@ const GameWorld = () => {
           <p className="text-gray-400 text-lg">Дарк фэнтези приключение</p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Tabs defaultValue="game" className="w-full mb-6">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 bg-dark-card border border-dark-border">
+            <TabsTrigger value="game" className="data-[state=active]:bg-primary">
+              <Icon name="Swords" size={18} className="mr-2" />
+              Игра
+            </TabsTrigger>
+            <TabsTrigger value="map" className="data-[state=active]:bg-primary">
+              <Icon name="Map" size={18} className="mr-2" />
+              Карта мира
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="map" className="mt-6">
+            <WorldMap />
+          </TabsContent>
+
+          <TabsContent value="game" className="mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <Card className="bg-dark-card border-dark-border p-6 shadow-2xl animate-scale-in">
               <div className="aspect-video bg-gradient-to-br from-dark-secondary to-dark-bg rounded-lg mb-4 relative overflow-hidden group">
@@ -284,6 +303,8 @@ const GameWorld = () => {
             </Card>
           </div>
         </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
