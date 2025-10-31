@@ -128,26 +128,37 @@ const Game3DSimple = ({ character }: Game3DSimpleProps) => {
       const centerY = canvas.height / 2;
       const scale = 20;
 
-      // Infinite grid
-      ctx.strokeStyle = '#1a1a2e';
-      ctx.lineWidth = 1;
+      // Procedural terrain colors
+      const terrainColors = ['#2d5016', '#1a3a0f', '#8b4513', '#d2691e'];
+      const tileSize = scale;
       
-      const gridSpacing = scale;
-      const offsetX = (playerX * scale) % gridSpacing;
-      const offsetY = (playerZ * scale) % gridSpacing;
+      const startTileX = Math.floor((playerX - canvas.width / scale / 2) / 1);
+      const startTileZ = Math.floor((playerZ - canvas.height / scale / 2) / 1);
+      const tilesX = Math.ceil(canvas.width / tileSize) + 2;
+      const tilesZ = Math.ceil(canvas.height / tileSize) + 2;
 
-      for (let x = -gridSpacing + offsetX; x < canvas.width + gridSpacing; x += gridSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-
-      for (let y = -gridSpacing + offsetY; y < canvas.height + gridSpacing; y += gridSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
+      for (let tx = 0; tx < tilesX; tx++) {
+        for (let tz = 0; tz < tilesZ; tz++) {
+          const worldX = startTileX + tx;
+          const worldZ = startTileZ + tz;
+          
+          const noise = seededRandom(worldX, worldZ, 5555);
+          let colorIndex;
+          if (noise < 0.3) colorIndex = 0;
+          else if (noise < 0.6) colorIndex = 1;
+          else if (noise < 0.8) colorIndex = 2;
+          else colorIndex = 3;
+          
+          const screenX = centerX + (worldX - playerX) * tileSize;
+          const screenY = centerY + (worldZ - playerZ) * tileSize;
+          
+          ctx.fillStyle = terrainColors[colorIndex];
+          ctx.fillRect(screenX, screenY, tileSize, tileSize);
+          
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+          ctx.lineWidth = 0.5;
+          ctx.strokeRect(screenX, screenY, tileSize, tileSize);
+        }
       }
 
       // Generate ruins
