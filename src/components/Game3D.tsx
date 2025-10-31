@@ -1,7 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Sky, Environment } from '@react-three/drei';
-import { Vector3 } from 'three';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import Icon from '@/components/ui/icon';
@@ -127,13 +125,10 @@ function CameraController({ targetPosition }: any) {
   const { camera } = useThree();
 
   useFrame(() => {
-    const idealPosition = new Vector3(
-      targetPosition.x,
-      targetPosition.y + 8,
-      targetPosition.z + 10
-    );
+    camera.position.x = targetPosition.x;
+    camera.position.y = targetPosition.y + 8;
+    camera.position.z = targetPosition.z + 10;
     
-    camera.position.lerp(idealPosition, 0.1);
     camera.lookAt(targetPosition.x, targetPosition.y + 1, targetPosition.z);
   });
 
@@ -154,7 +149,6 @@ function Trees() {
   const positions = [
     [-8, -8], [8, -8], [-8, 8], [8, 8],
     [-12, 0], [12, 0], [0, -12], [0, 12],
-    [-15, -5], [15, 5], [-5, 15], [5, -15]
   ];
 
   for (let i = 0; i < positions.length; i++) {
@@ -187,18 +181,14 @@ function Ruins() {
         <boxGeometry args={[2, 3, 2]} />
         <meshStandardMaterial color="#3D2E5C" roughness={0.9} />
       </mesh>
-      <mesh castShadow position={[-15, 1, 15]}>
-        <cylinderGeometry args={[1, 1, 2, 8]} />
-        <meshStandardMaterial color="#3D2E5C" roughness={0.9} />
-      </mesh>
     </>
   );
 }
 
 const Game3D = ({ character }: Game3DProps) => {
   const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0, z: 0 });
-  const [currentHealth, setCurrentHealth] = useState(character.stats.health);
-  const [currentMana, setCurrentMana] = useState(character.stats.mana);
+  const [currentHealth] = useState(character.stats.health);
+  const [currentMana] = useState(character.stats.mana);
 
   const getCharacterColor = () => {
     switch (character.id) {
@@ -212,19 +202,15 @@ const Game3D = ({ character }: Game3DProps) => {
   return (
     <div className="relative w-full h-screen bg-dark-bg">
       <Canvas shadows camera={{ position: [0, 8, 10], fov: 60 }}>
-        <Sky 
-          distance={450000}
-          sunPosition={[0, 1, 0]}
-          inclination={0.6}
-          azimuth={0.25}
-        />
+        <color attach="background" args={['#0a0a0f']} />
+        <fog attach="fog" args={['#0a0a0f', 20, 50]} />
         
-        <ambientLight intensity={0.3} />
+        <ambientLight intensity={0.4} />
         <directionalLight
           position={[10, 20, 10]}
           intensity={1}
           castShadow
-          shadow-mapSize={[2048, 2048]}
+          shadow-mapSize={[1024, 1024]}
         />
         
         <pointLight position={[0, 10, 0]} intensity={0.5} color="#9b87f5" />
@@ -240,8 +226,6 @@ const Game3D = ({ character }: Game3DProps) => {
         />
         
         <CameraController targetPosition={playerPosition} />
-        
-        <Environment preset="night" />
       </Canvas>
 
       <Card className="absolute top-6 left-6 bg-dark-card/90 backdrop-blur-sm border-primary/50 p-4 min-w-[280px]">
@@ -275,49 +259,27 @@ const Game3D = ({ character }: Game3DProps) => {
               </div>
               <span className="text-white font-bold">{currentMana}/{character.stats.mana}</span>
             </div>
-            <Progress value={(currentMana / character.stats.mana) * 100} className="h-2 bg-dark-bg/50" />
+            <Progress value={(currentMana / character.stats.mana) * 100} className="h-2 [&>div]:bg-primary" />
+          </div>
+
+          <div className="pt-2 border-t border-dark-border/50">
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <Icon name="MapPin" size={12} />
+              <span>X: {playerPosition.x.toFixed(1)} Z: {playerPosition.z.toFixed(1)}</span>
+            </div>
           </div>
         </div>
       </Card>
 
-      <Card className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-dark-card/90 backdrop-blur-sm border-dark-border p-4">
-        <div className="flex items-center gap-6 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-primary/20 border border-primary flex items-center justify-center font-bold">
-              W
-            </div>
-            <span className="text-gray-400">Вперёд</span>
+      <Card className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-dark-card/90 backdrop-blur-sm border-primary/50 p-3">
+        <div className="flex items-center gap-3 text-sm text-gray-400">
+          <div className="flex items-center gap-1">
+            <kbd className="px-2 py-1 bg-dark-bg rounded text-xs">W</kbd>
+            <kbd className="px-2 py-1 bg-dark-bg rounded text-xs">A</kbd>
+            <kbd className="px-2 py-1 bg-dark-bg rounded text-xs">S</kbd>
+            <kbd className="px-2 py-1 bg-dark-bg rounded text-xs">D</kbd>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-primary/20 border border-primary flex items-center justify-center font-bold">
-              S
-            </div>
-            <span className="text-gray-400">Назад</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-primary/20 border border-primary flex items-center justify-center font-bold">
-              A
-            </div>
-            <span className="text-gray-400">Влево</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-primary/20 border border-primary flex items-center justify-center font-bold">
-              D
-            </div>
-            <span className="text-gray-400">Вправо</span>
-          </div>
-        </div>
-      </Card>
-
-      <Card className="absolute top-6 right-6 bg-dark-card/90 backdrop-blur-sm border-dark-border p-4">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm">
-            <Icon name="MapPin" size={16} className="text-primary" />
-            <span className="text-gray-400">Позиция:</span>
-            <span className="font-mono text-xs">
-              X: {playerPosition.x.toFixed(1)} Z: {playerPosition.z.toFixed(1)}
-            </span>
-          </div>
+          <span>Движение</span>
         </div>
       </Card>
     </div>
