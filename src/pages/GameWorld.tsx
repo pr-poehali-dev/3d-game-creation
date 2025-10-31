@@ -8,6 +8,7 @@ import Icon from '@/components/ui/icon';
 import WorldMap from '@/components/WorldMap';
 import CharacterSelect from '@/components/CharacterSelect';
 import Game3DSimple from '@/components/Game3DSimple';
+import Game3DWorking from '@/components/Game3DWorking';
 
 interface Quest {
   id: number;
@@ -157,7 +158,7 @@ const GameWorld = () => {
           </TabsList>
 
           <TabsContent value="3d" className="mt-6">
-            <Game3DSimple character={selectedCharacter} />
+            <Game3DWorking character={selectedCharacter} />
           </TabsContent>
 
           <TabsContent value="map" className="mt-6">
