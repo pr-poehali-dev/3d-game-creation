@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 import WorldMap from '@/components/WorldMap';
 import CharacterSelect from '@/components/CharacterSelect';
-import Game3D from '@/components/Game3D';
+import Game3DSimple from '@/components/Game3DSimple';
 
 interface Quest {
   id: number;
@@ -157,7 +157,7 @@ const GameWorld = () => {
           </TabsList>
 
           <TabsContent value="3d" className="mt-6">
-            <Game3D character={selectedCharacter} />
+            <Game3DSimple character={selectedCharacter} />
           </TabsContent>
 
           <TabsContent value="map" className="mt-6">
