@@ -158,7 +158,7 @@ const GameWorld = () => {
           </TabsList>
 
           <TabsContent value="3d" className="mt-6">
-            <Game3DWorking character={selectedCharacter} />
+            <Game3DSimple character={selectedCharacter} />
           </TabsContent>
 
           <TabsContent value="map" className="mt-6">
