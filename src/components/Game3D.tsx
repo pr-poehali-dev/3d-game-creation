@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Sky, Environment } from '@react-three/drei';
-import * as THREE from 'three';
+import { Sky, Environment } from '@react-three/drei';
+import { Vector3 } from 'three';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import Icon from '@/components/ui/icon';
@@ -24,7 +24,7 @@ interface Game3DProps {
 }
 
 function Player({ color, position, onPositionChange }: any) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<any>(null);
   const [moveDirection, setMoveDirection] = useState({ x: 0, z: 0 });
   const speed = 0.1;
 
@@ -127,7 +127,7 @@ function CameraController({ targetPosition }: any) {
   const { camera } = useThree();
 
   useFrame(() => {
-    const idealPosition = new THREE.Vector3(
+    const idealPosition = new Vector3(
       targetPosition.x,
       targetPosition.y + 8,
       targetPosition.z + 10
