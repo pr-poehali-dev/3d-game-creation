@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 import WorldMap from '@/components/WorldMap';
+import CharacterSelect from '@/components/CharacterSelect';
+import Game3D from '@/components/Game3D';
 
 interface Quest {
   id: number;
@@ -20,7 +22,21 @@ interface DialogOption {
   action: () => void;
 }
 
+interface Character {
+  id: string;
+  name: string;
+  class: string;
+  stats: {
+    health: number;
+    mana: number;
+    attack: number;
+    defense: number;
+  };
+  color: string;
+}
+
 const GameWorld = () => {
+  const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [playerHealth, setPlayerHealth] = useState(100);
   const [enemyHealth, setEnemyHealth] = useState(100);
   const [inBattle, setInBattle] = useState(false);
@@ -32,6 +48,10 @@ const GameWorld = () => {
     { id: 2, title: 'Охота на тени', description: 'Победи 5 теневых существ', progress: 60, completed: false },
   ]);
   const [combatLog, setCombatLog] = useState<string[]>([]);
+
+  if (!selectedCharacter) {
+    return <CharacterSelect onSelectCharacter={setSelectedCharacter} />;
+  }
 
   const startDialog = () => {
     setCurrentDialog('Путник... Ты осмелился войти в эти проклятые земли. Что привело тебя сюда?');
@@ -120,8 +140,12 @@ const GameWorld = () => {
           <p className="text-gray-400 text-lg">Дарк фэнтези приключение</p>
         </header>
 
-        <Tabs defaultValue="game" className="w-full mb-6">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 bg-dark-card border border-dark-border">
+        <Tabs defaultValue="3d" className="w-full mb-6">
+          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3 bg-dark-card border border-dark-border">
+            <TabsTrigger value="3d" className="data-[state=active]:bg-primary">
+              <Icon name="Box" size={18} className="mr-2" />
+              3D Мир
+            </TabsTrigger>
             <TabsTrigger value="game" className="data-[state=active]:bg-primary">
               <Icon name="Swords" size={18} className="mr-2" />
               Игра
@@ -131,6 +155,10 @@ const GameWorld = () => {
               Карта мира
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="3d" className="mt-6">
+            <Game3D character={selectedCharacter} />
+          </TabsContent>
 
           <TabsContent value="map" className="mt-6">
             <WorldMap />
